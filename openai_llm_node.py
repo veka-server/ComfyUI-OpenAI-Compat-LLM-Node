@@ -8,6 +8,20 @@ from PIL import Image
 class OpenAILLMNode:
     @classmethod
     def INPUT_TYPES(cls):
+
+        # Compute model list safely here (no lambda, no callable)
+        try:
+            model_list = cls._get_model_list(
+                cls._get_cached_models_endpoint(),
+                cls._get_cached_token()
+            )
+        except Exception:
+            model_list = ["gpt-4-vision-preview", "gpt-4", "gpt-3.5-turbo"]
+
+        # Guarantee it ^`^ys a list of strings
+        if not isinstance(model_list, list) or not all(isinstance(m, str) for m in model_list):
+            model_list = ["gpt-4-vision-preview", "gpt-4", "gpt-3.5-turbo"]
+
         return {
             "required": {
                 "prompt": ("STRING", {
@@ -24,6 +38,9 @@ class OpenAILLMNode:
                     "multiline": False,
                     "default": "",
                     "placeholder": "Your API token"
+                }),
+                "model": (model_list, {
+                    "default": "gpt-4-vision-preview"
                 }),
             },
             "optional": {
