@@ -54,41 +54,46 @@ class OpenAILLMNode:
     RETURN_TYPES = ("STRING",)
     FUNCTION = "generate_text"
     CATEGORY = "LLM"
-    
+
     def _encode_image_to_base64(self, image_tensor):
-        """Convert ComfyUI image tensor to base64 encoded string"""
-        try:
-            # ComfyUI images are typically in format [batch, height, width, channels] with values 0-1
-            if len(image_tensor.shape) == 4:
-                # Take first image from batch
-                image_array = image_tensor[0]
-            else:
-                image_array = image_tensor
-            
-            # Convert from 0-1 float to 0-255 uint8
-            if image_array.max() <= 1.0:
-                image_array = (image_array * 255).astype(np.uint8)
-            
-            # Convert numpy array to PIL Image
-            if len(image_array.shape) == 3 and image_array.shape[2] == 3:
-                # RGB image
-                pil_image = Image.fromarray(image_array, 'RGB')
-            elif len(image_array.shape) == 3 and image_array.shape[2] == 4:
-                # RGBA image
-                pil_image = Image.fromarray(image_array, 'RGBA')
-            else:
-                # Grayscale or other format
-                pil_image = Image.fromarray(image_array)
-            
-            # Convert to base64
-            buffered = io.BytesIO()
-            pil_image.save(buffered, format="PNG")
-            img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-            
-            return f"data:image/png;base64,{img_base64}"
-            
-        except Exception as e:
-            raise Exception(f"Failed to encode image: {str(e)}")
+    """Convert ComfyUI image tensor to base64 encoded string"""
+    try:
+        # ComfyUI images are typically in format [batch, height, width, channels] with values 0-1
+        if len(image_tensor.shape) == 4:
+            # Take first image from batch
+            image_array = image_tensor[0]
+        else:
+            image_array = image_tensor
+        
+        # Convert tensor to numpy array if needed
+        if hasattr(image_array, 'cpu'):
+            # It's a PyTorch tensor
+            image_array = image_array.cpu().numpy()
+        
+        # Convert from 0-1 float to 0-255 uint8
+        if image_array.max() <= 1.0:
+            image_array = (image_array * 255).astype(np.uint8)
+        
+        # Convert numpy array to PIL Image
+        if len(image_array.shape) == 3 and image_array.shape[2] == 3:
+            # RGB image
+            pil_image = Image.fromarray(image_array, 'RGB')
+        elif len(image_array.shape) == 3 and image_array.shape[2] == 4:
+            # RGBA image
+            pil_image = Image.fromarray(image_array, 'RGBA')
+        else:
+            # Grayscale or other format
+            pil_image = Image.fromarray(image_array)
+        
+        # Convert to base64
+        buffered = io.BytesIO()
+        pil_image.save(buffered, format="PNG")
+        img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+        
+        return f"data:image/png;base64,{img_base64}"
+        
+    except Exception as e:
+        raise Exception(f"Failed to encode image: {str(e)}")
     
     def generate_text(self, prompt, endpoint, api_token, model="gpt-4-vision-preview", max_tokens=150, temperature=0.7, image=None, image_detail="auto"):
         try:
