@@ -130,7 +130,7 @@ class OpenAILLMNode:
                 "temperature": temperature
             }
 
-            response = requests.post(endpoint, headers=headers, json=data, timeout=30)
+            response = requests.post(endpoint, headers=headers, json=data, timeout=300)
             response.raise_for_status()
 
             result = response.json()
